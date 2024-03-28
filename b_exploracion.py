@@ -44,7 +44,7 @@ movies.info()
 
 # Borramos la columna timestamp, ya la tenemos convertida como date 
 ratings.drop([ 'timestamp'], axis = 1, inplace = True)
-ratings
+ratings.head()
 
 # Conteo de los ratings que hay en total
 rc = pd.read_sql("""SELECT rating, COUNT(*) as conteo 
@@ -56,7 +56,15 @@ data  = go.Bar( x=rc.rating,y=rc.conteo, text=rc.conteo, textposition="outside")
 Layout=go.Layout(title="Conteo de ratings",xaxis={'title':'Rating'},yaxis={'title':'Conteo'})
 go.Figure(data,Layout)
 
-# Promedio de calificación que da cada usuario 
+# Número de películas calificadas por cada usuario 
+
+cu = pd.read_sql("""SELECT userId, COUNT(*) AS conteo_user
+                    FROM ratings
+                    GROUP BY userId
+                    ORDER BY conteo_user ASC""", conn)
+
+fig  = px.histogram(cu, x= 'conteo_user', title= 'Frecuencia de numero de calificaciones por usario')
+fig.show() 
 
 
 
