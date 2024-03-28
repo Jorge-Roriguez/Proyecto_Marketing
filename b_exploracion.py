@@ -40,9 +40,23 @@ ratings[['rating','date']].describe() # Solamente rating y date vale la pena ana
 movies.head()
 movies.info()
 
+# ------------------- Descripción tabla ratings ---------------------------------------------#
 
-# ------------------- Descripción tabla ratings 
+# Borramos la columna timestamp, ya la tenemos convertida como date 
+ratings.drop([ 'timestamp'], axis = 1, inplace = True)
+ratings
 
+# Conteo de los ratings que hay en total
+rc = pd.read_sql("""SELECT rating, COUNT(*) as conteo 
+                            FROM ratings
+                            GROUP BY rating
+                            ORDER BY conteo DESC""", conn)
+
+data  = go.Bar( x=rc.rating,y=rc.conteo, text=rc.conteo, textposition="outside")
+Layout=go.Layout(title="Conteo de ratings",xaxis={'title':'Rating'},yaxis={'title':'Conteo'})
+go.Figure(data,Layout)
+
+# Promedio de calificación que da cada usuario 
 
 
 
