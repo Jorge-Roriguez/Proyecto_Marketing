@@ -47,7 +47,7 @@ movies.info()
 ratings.drop([ 'timestamp'], axis = 1, inplace = True)
 ratings.head()
 
-# Conteo de los ratings que hay en total
+# Conteo por cada rating 
 rc = pd.read_sql("""SELECT rating, COUNT(*) as conteo 
                             FROM ratings
                             GROUP BY rating
@@ -75,17 +75,17 @@ mu = pd.read_sql("""
             ORDER BY promedio_calificacion ASC""", conn)
 
 
-# Promedio de calificaciones por cada película 
+fig  = px.histogram(mu, x= 'promedio_calificacion', title= 'Promedio de calificaciones de los usuarios')
+fig.show() 
 
+# Promedio de calificaciones por cada película 
 mm = pd.read_sql(""" 
                 SELECT movieId, avg(rating) AS promedio_calificacion 
                 FROM ratings 
                 GROUP BY movieId
                 ORDER BY promedio_calificacion ASC""", conn)
 
-
 # Número de calificaciones que tiene cada película 
-
 mn = pd.read_sql("""
                 SELECT movieId, COUNT(rating) AS numero_calificacion 
                 FROM ratings 
@@ -93,15 +93,29 @@ mn = pd.read_sql("""
                 ORDER BY numero_calificacion ASC""", conn)
 
 
-# Veamos las películas que han calificado >4 en promedio y el número de personas que las ha calificado 
+# Veamos las películas que han calificado >4 en promedio y el número de personas que las han calificado es mayor a 70
 m4 = pd.read_sql("""
-                SELECT movieId, AVG(rating) AS promedio_calificacion, COUNT(CASE WHEN rating > 4 THEN 1 END) AS num_personas_calificaron_4
+                SELECT movieId, AVG(rating) AS promedio_calificacion, COUNT(CASE WHEN rating > 4 THEN 1 END) AS num_personas_calificaron
                 FROM ratings 
                 GROUP BY movieId
-                HAVING promedio_calificacion > 4
-                ORDER BY promedio_calificacion ASC""", conn)
- 
+                HAVING promedio_calificacion > 4.2 AND num_personas_calificaron >= 70
+                ORDER BY num_personas_calificaron ASC""", conn)
 
+joined_df = pd.merge(m4, movies, how='inner', on='movieId')
+joined_df
 
-# ----------------- Descripción tabla movies 
+fig = px.pie(joined_df, values='num_personas_calificaron', names='title', title='Top 10 películas mejor calificadas')
+fig.show()
 
+# Extraigamos mes y día de cada registro
+ratings['month'] = ratings['date'].dt.month
+ratings['day'] = ratings['date'].dt.day
+
+# Veamos la actividad de los usuarios en cada mes 
+df_m = pd.DataFrame(ratings.groupby('month')['rating'].size())
+df_m = df_m.reset_index()
+df_m
+
+fig = px.line(df_m, x="month", y="rating", title='Actividad de los usuarios por mes')
+fig.update_layout(xaxis_title='Mes', yaxis_title='Número de Visitas')
+fig.show()
