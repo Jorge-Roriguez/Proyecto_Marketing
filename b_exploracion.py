@@ -8,6 +8,7 @@ import datetime
 # Gráficos 
 import plotly.graph_objs as go 
 import plotly.express as px
+import matplotlib.pyplot as plt
 
 #Librerías para actualizar archivo a_funciones cuando se hagan cambios
 import importlib 
@@ -66,6 +67,40 @@ cu = pd.read_sql("""SELECT userId, COUNT(*) AS conteo_user
 fig  = px.histogram(cu, x= 'conteo_user', title= 'Frecuencia de numero de calificaciones por usario')
 fig.show() 
 
+# Promedio de calificación por usuario 
+mu = pd.read_sql("""
+            SELECT userId, AVG(rating) AS promedio_calificacion 
+            FROM ratings 
+            GROUP BY userId
+            ORDER BY promedio_calificacion ASC""", conn)
+
+
+# Promedio de calificaciones por cada película 
+
+mm = pd.read_sql(""" 
+                SELECT movieId, avg(rating) AS promedio_calificacion 
+                FROM ratings 
+                GROUP BY movieId
+                ORDER BY promedio_calificacion ASC""", conn)
+
+
+# Número de calificaciones que tiene cada película 
+
+mn = pd.read_sql("""
+                SELECT movieId, COUNT(rating) AS numero_calificacion 
+                FROM ratings 
+                GROUP BY movieId
+                ORDER BY numero_calificacion ASC""", conn)
+
+
+# Veamos las películas que han calificado >4 en promedio y el número de personas que las ha calificado 
+m4 = pd.read_sql("""
+                SELECT movieId, AVG(rating) AS promedio_calificacion, COUNT(CASE WHEN rating > 4 THEN 1 END) AS num_personas_calificaron_4
+                FROM ratings 
+                GROUP BY movieId
+                HAVING promedio_calificacion > 4
+                ORDER BY promedio_calificacion ASC""", conn)
+ 
 
 
 # ----------------- Descripción tabla movies 
