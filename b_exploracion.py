@@ -20,6 +20,8 @@ importlib.reload(funciones)
 conn=sql.connect('data\\db_movies') 
 cur=conn.cursor() 
 
+funciones.ejecutar_sql('Preprocesamiento.sql', cur)
+
 # ------------------------- Verificamos tablas en db ----------------------------------------#
 cur.execute("Select name from sqlite_master where type='table'") ### consultar bases de datos
 cur.fetchall()
@@ -27,9 +29,6 @@ cur.fetchall()
 # ------------------------- Leemos tablas como DataFrames -----------------------------------#
 ratings = pd.read_sql("SELECT * FROM ratings", conn)
 movies = pd.read_sql("SELECT * FROM movies", conn)
-
-# Pasamos de formato UNIX a datetime para entender los datos
-ratings['date'] = pd.to_datetime(ratings['timestamp'], unit='s') 
 
 
 # ------------------------ Exploración tablas ------------------------------------------------#
@@ -106,10 +105,6 @@ joined_df
 
 fig = px.pie(joined_df, values='num_personas_calificaron', names='title', title='Top 10 películas mejor calificadas')
 fig.show()
-
-# Extraigamos mes y día de cada registro
-ratings['month'] = ratings['date'].dt.month
-ratings['day'] = ratings['date'].dt.day
 
 # Veamos la actividad de los usuarios en cada mes 
 df_m = pd.DataFrame(ratings.groupby('month')['rating'].size())
