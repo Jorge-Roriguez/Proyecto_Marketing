@@ -1,9 +1,9 @@
+# -------------------------- Librerias necesarias ---------------------------------------------
 # Datos 
 import numpy as np
 import pandas as pd
 import sqlite3 as sql
 import datetime
-
 
 # Gráficos 
 import plotly.graph_objs as go 
@@ -16,23 +16,22 @@ import a_funciones as funciones
 importlib.reload(funciones) 
 
 
-# -------------------------- Creamos conexión con SQL ----------------------------------------#
-conn=sql.connect('data\\db_movies') 
-cur=conn.cursor() 
+# -------------------------- Creamos conexión con SQL ----------------------------------------
+conn = sql.connect('data\\db_movies') 
+cur = conn.cursor() 
 
-funciones.ejecutar_sql('Preprocesamiento.sql', cur)
+# Para ejecutar archivo de preprocesamiento de datos 
+# funciones.ejecutar_sql('Preprocesamiento.sql', cur)
 
-# ------------------------- Verificamos tablas en db ----------------------------------------#
+# ------------------------- Verificamos tablas en db ----------------------------------------
 cur.execute("Select name from sqlite_master where type='table'") ### consultar bases de datos
 cur.fetchall()
 
-# ------------------------- Leemos tablas como DataFrames -----------------------------------#
+# ------------------------- Leemos tablas como DataFrames -----------------------------------
 ratings = pd.read_sql("SELECT * FROM ratings", conn)
 movies = pd.read_sql("SELECT * FROM movies", conn)
 
-
-# ------------------------ Exploración tablas ------------------------------------------------#
-
+# ------------------------ Exploración tablas ------------------------------------------------
 ratings.head()
 ratings.info()
 ratings[['rating','date']].describe() # Solamente rating y date vale la pena analizar
@@ -40,10 +39,10 @@ ratings[['rating','date']].describe() # Solamente rating y date vale la pena ana
 movies.head()
 movies.info()
 
-# ------------------- Descripción tabla ratings ---------------------------------------------#
+# ------------------- Descripción tabla ratings ---------------------------------------------
 
 # Borramos la columna timestamp, ya la tenemos convertida como date 
-ratings.drop([ 'timestamp'], axis = 1, inplace = True)
+ratings.drop(['timestamp', 'date'], axis = 1, inplace = True)
 ratings.head()
 
 # Conteo por cada rating 
@@ -52,18 +51,17 @@ rc = pd.read_sql("""SELECT rating, COUNT(*) as conteo
                             GROUP BY rating
                             ORDER BY conteo DESC""", conn)
 
-data  = go.Bar( x=rc.rating,y=rc.conteo, text=rc.conteo, textposition="outside")
-Layout=go.Layout(title="Conteo de ratings",xaxis={'title':'Rating'},yaxis={'title':'Conteo'})
-go.Figure(data,Layout)
+data  = go.Bar( x = rc.rating, y = rc.conteo, text = rc.conteo, textposition = "outside")
+Layout = go.Layout(title = "Conteo de ratings", xaxis = {'title':'Rating'}, yaxis = {'title':'Conteo'})
+go.Figure(data, Layout)
 
 # Número de películas calificadas por cada usuario 
-
 cu = pd.read_sql("""SELECT userId, COUNT(*) AS conteo_user
                     FROM ratings
                     GROUP BY userId
                     ORDER BY conteo_user ASC""", conn)
 
-fig  = px.histogram(cu, x= 'conteo_user', title= 'Frecuencia de numero de calificaciones por usario')
+fig  = px.histogram(cu, x = 'conteo_user', title = 'Frecuencia de numero de calificaciones por usario')
 fig.show() 
 
 # Promedio de calificación por usuario 
@@ -73,8 +71,7 @@ mu = pd.read_sql("""
             GROUP BY userId
             ORDER BY promedio_calificacion ASC""", conn)
 
-
-fig  = px.histogram(mu, x= 'promedio_calificacion', title= 'Promedio de calificaciones de los usuarios')
+fig  = px.histogram(mu, x = 'promedio_calificacion', title = 'Promedio de calificaciones de los usuarios')
 fig.show() 
 
 # Promedio de calificaciones por cada película 
@@ -91,8 +88,7 @@ mn = pd.read_sql("""
                 GROUP BY movieId
                 ORDER BY numero_calificacion ASC""", conn)
 
-
-# Veamos las películas que han calificado >4 en promedio y el número de personas que las han calificado es mayor a 70
+# Películas que han calificado >4 en promedio y el número de personas que las han calificado es mayor a 70
 m4 = pd.read_sql("""
                 SELECT movieId, AVG(rating) AS promedio_calificacion, COUNT(CASE WHEN rating > 4 THEN 1 END) AS num_personas_calificaron
                 FROM ratings 
@@ -100,17 +96,15 @@ m4 = pd.read_sql("""
                 HAVING promedio_calificacion > 4.2 AND num_personas_calificaron >= 70
                 ORDER BY num_personas_calificaron ASC""", conn)
 
-joined_df = pd.merge(m4, movies, how='inner', on='movieId')
-joined_df
-
-fig = px.pie(joined_df, values='num_personas_calificaron', names='title', title='Top 10 películas mejor calificadas')
+joined_df = pd.merge(m4, movies, how = 'inner', on = 'movieId')
+fig = px.pie(joined_df, values = 'num_personas_calificaron', names = 'title', title = 'Top 10 películas mejor calificadas')
 fig.show()
 
-# Veamos la actividad de los usuarios en cada mes 
+# Actividad de los usuarios en cada mes 
 df_m = pd.DataFrame(ratings.groupby('month')['rating'].size())
 df_m = df_m.reset_index()
 df_m
 
-fig = px.line(df_m, x="month", y="rating", title='Actividad de los usuarios por mes')
-fig.update_layout(xaxis_title='Mes', yaxis_title='Número de Visitas')
+fig = px.line(df_m, x = "month", y = "rating", title = 'Actividad de los usuarios por mes')
+fig.update_layout(xaxis_title = 'Mes', yaxis_title = 'Número de Visitas')
 fig.show()

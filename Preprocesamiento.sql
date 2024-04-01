@@ -1,4 +1,4 @@
----- Preprocesamientos
+------------ Preprocesamientos
 ALTER TABLE ratings
 ADD COLUMN date DATETIME;
 
@@ -24,6 +24,12 @@ SET
     month = CAST(strftime('%m', date) AS INTEGER),
     day = CAST(strftime('%d', date) AS INTEGER);
 	
+ALTER TABLE ratings 
+DROP COLUMN timestamp;
+
+ALTER TABLE ratings
+Drop COLUMN date;
+
 SELECT * FROM ratings; 
 
 
