@@ -16,6 +16,10 @@ import importlib
 import a_funciones as funciones
 importlib.reload(funciones) 
 
+#Modelos
+from sklearn import neighbors 
+from ipywidgets import interact
+import joblib
 
 # -------------------------- Creamos conexión con SQL ---------------------------------------
 conn = sql.connect('data\\db_movies') 
@@ -83,3 +87,43 @@ top_similar = pelicula_similar.to_frame(name = 'correlación').iloc[0:12,]
 top_similar['title'] = movies['title']
 top_similar
 
+# Peliculas recomendadas para visualizacion de todas las pelicualas 
+
+def recomendacion(peliculas = list(movies['title'])):
+    ind_movies = movies[movies['title']==peliculas].index.values.astype(int)[0]
+    similar_movies = movies_dum.corrwith(movies_dum.iloc[ind_movies,:],axis=1)
+    similar_movies = similar_movies.sort_values(ascending=False)
+    top_similar_movies = similar_movies.to_frame(name="correlación").iloc[0:11,]
+    top_similar_movies['title']=movies["title"]
+
+    return top_similar_movies
+
+print(interact(recomendacion))
+
+
+
+# ------------------------------------------------------------------------------------------------------
+# -------------------------Sistema de recomendación basado en contenido KNN, un solo producto visto -----
+# ------------------------------------------------------------------------------------------------------
+
+#Entrenar modelo
+
+#model = neighbors.NearestNeighbors(n_neighbors = 10, metric='cosine')
+#model.fit(movies_dum)
+#dist, idlist = model.kneighbors(movies_dum)
+
+#distancias = pd.DataFrame(dist)
+#id_list = pd.DataFrame(idlist)
+
+
+# Sistema de recomendación
+
+#def MovieRecommender(movie_name = list(movies['title'].value_counts().index)):
+    #movie_list_name = []
+    #movie_id = movies[movies['title'] == movie_name].index
+    #movie_id = movie_id[0]
+    #for newid in idlist[movie_id]:
+        #movie_list_name.append(movies.loc[newid].title)
+    #return movie_list_name
+
+#print(interact(MovieRecommender))
