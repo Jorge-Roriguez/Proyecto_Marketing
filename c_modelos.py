@@ -16,6 +16,9 @@ import importlib
 import a_funciones as funciones
 importlib.reload(funciones) 
 
+# Preprocesamiento 
+from mlxtend.preprocessing import TransactionEncoder
+
 #Modelos
 from sklearn import neighbors 
 from ipywidgets import interact
@@ -32,6 +35,16 @@ cur.fetchall()
 # ------------------------- Leemos tablas como DataFrames -----------------------------------
 ratings = pd.read_sql("SELECT * FROM ratings", conn)
 movies = pd.read_sql("SELECT * FROM movies", conn)
+
+
+genres=movies['genres'].str.split('|')
+te = TransactionEncoder()
+genres = te.fit_transform(genres)
+genres = pd.DataFrame(genres, columns = te.columns_)
+genres  = genres.astype(int)
+movies_1 = movies.drop(['genres'], axis = 1, inplace = True) 
+movies_1 =pd.concat([movies, genres],axis=1)
+movies_1
 
 
 # -------------------------------------------------------------------------------------------
@@ -52,15 +65,6 @@ fig = px.pie(joined_df, values = 'num_personas_calificaron', names = 'title',
 fig.show()
 
 # Películas que han calificado mayor a 4 en promedio para el último año (2018)
-m2 = pd.read_sql("""
-                SELECT movieId, AVG(rating) AS promedio_calificacion, COUNT(CASE WHEN rating > 4 THEN 1 END) AS num_personas_calificaron
-                FROM ratings 
-                GROUP BY movieId
-                HAVING promedio_calificacion > 4.2 AND num_personas_calificaron >= 70
-                ORDER BY num_personas_calificaron ASC
-                 """, conn)
-
-
 
 # -------------------------------------------------------------------------------------------
 # ------------------------- Sistemas de recomendación por contenido ------------------------- 
@@ -68,15 +72,12 @@ m2 = pd.read_sql("""
 
 # Se trabajo con esta tabla dado que las comparaciónes ahora son por contenido no por rating 
 movies.info()
-movies = movies.drop('movieId', axis = 1) # No se necesita el ID 
+movies_1 = movies_1.drop('movieId', axis = 1) # No se necesita el ID 
+movies_dum = pd.get_dummies(movies_1, dtype = int)
 
-# Cantidad total de títulos y géneros
-movies['title'].nunique()
-movies['genres'].nunique()
 
 # Convertimos a dummies
-movies_dum = pd.get_dummies(movies, dtype = int)
-movies_dum.shape # Dimensión de la tabla
+movies.shape # Dimensión de la tabla
 
 # Peliculas recomendadas a partir de una película 
 pelicula = 'Toy Story (1995)'
@@ -108,22 +109,22 @@ print(interact(recomendacion))
 
 #Entrenar modelo
 
-#model = neighbors.NearestNeighbors(n_neighbors = 10, metric='cosine')
-#model.fit(movies_dum)
-#dist, idlist = model.kneighbors(movies_dum)
+""" model = neighbors.NearestNeighbors(n_neighbors = 10, metric='cosine')
+model.fit(movies_dum)
+dist, idlist = model.kneighbors(movies_dum)
 
-#distancias = pd.DataFrame(dist)
-#id_list = pd.DataFrame(idlist)
+distancias = pd.DataFrame(dist)
+id_list = pd.DataFrame(idlist)
 
 
 # Sistema de recomendación
 
-#def MovieRecommender(movie_name = list(movies['title'].value_counts().index)):
-    #movie_list_name = []
-    #movie_id = movies[movies['title'] == movie_name].index
-    #movie_id = movie_id[0]
-    #for newid in idlist[movie_id]:
-        #movie_list_name.append(movies.loc[newid].title)
-    #return movie_list_name
+def MovieRecommender(movie_name = list(movies['title'].value_counts().index)):
+    movie_list_name = []
+    movie_id = movies[movies['title'] == movie_name].index
+    movie_id = movie_id[0]
+    for newid in idlist[movie_id]:
+        movie_list_name.append(movies.loc[newid].title)
+    return movie_list_name
 
-#print(interact(MovieRecommender))
+print(interact(MovieRecommender)) """
