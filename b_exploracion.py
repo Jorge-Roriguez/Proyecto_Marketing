@@ -34,16 +34,12 @@ movies = pd.read_sql("SELECT * FROM movies", conn)
 # ------------------------ Exploración tablas ------------------------------------------------
 ratings.head()
 ratings.info()
-ratings[['rating','date']].describe() # Solamente rating y date vale la pena analizar
+ratings[['rating','year','month','day']].describe() # Solamente rating y date vale la pena analizar
 
 movies.head()
 movies.info()
 
 # ------------------- Descripción tabla ratings ---------------------------------------------
-
-# Borramos la columna timestamp, ya la tenemos convertida como date 
-ratings.drop(['timestamp', 'date'], axis = 1, inplace = True)
-ratings.head()
 
 # Conteo por cada rating 
 rc = pd.read_sql("""SELECT rating, COUNT(*) as conteo 
@@ -88,22 +84,11 @@ mn = pd.read_sql("""
                 GROUP BY movieId
                 ORDER BY numero_calificacion ASC""", conn)
 
-# Películas que han calificado >4 en promedio y el número de personas que las han calificado es mayor a 70
-m4 = pd.read_sql("""
-                SELECT movieId, AVG(rating) AS promedio_calificacion, COUNT(CASE WHEN rating > 4 THEN 1 END) AS num_personas_calificaron
-                FROM ratings 
-                GROUP BY movieId
-                HAVING promedio_calificacion > 4.2 AND num_personas_calificaron >= 70
-                ORDER BY num_personas_calificaron ASC""", conn)
-
-joined_df = pd.merge(m4, movies, how = 'inner', on = 'movieId')
-fig = px.pie(joined_df, values = 'num_personas_calificaron', names = 'title', title = 'Top 10 películas mejor calificadas')
-fig.show()
-
-# Actividad de los usuarios en cada mes 
+# Actividad de los usuarios en cada mes (ultimos 5 años)
 df_m = pd.DataFrame(ratings.groupby('month')['rating'].size())
 df_m = df_m.reset_index()
 df_m
+
 
 fig = px.line(df_m, x = "month", y = "rating", title = 'Actividad de los usuarios por mes')
 fig.update_layout(xaxis_title = 'Mes', yaxis_title = 'Número de Visitas')

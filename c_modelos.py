@@ -31,7 +31,7 @@ movies = pd.read_sql("SELECT * FROM movies", conn)
 
 
 # -------------------------------------------------------------------------------------------
-# ------------------------- Sistemas de recomendación por valoración ------------------------ 
+# ------------------------- Sistemas de recomendación por valoración (popularidad) ------------------------ 
 # -------------------------------------------------------------------------------------------
 
 # Películas que han calificado > 4 en promedio y el número de personas que las han calificado es mayor a 70
@@ -47,10 +47,13 @@ fig = px.pie(joined_df, values = 'num_personas_calificaron', names = 'title',
              title = 'Top 10 películas mejor calificadas')
 fig.show()
 
-# Películas que han calificado mayor a 4 en promedio para cada mes 
-# y que el número de personas que las han calificado es mayor a 70
+# Películas que han calificado mayor a 4 en promedio para el último año (2018)
 m2 = pd.read_sql("""
-                
+                SELECT movieId, AVG(rating) AS promedio_calificacion, COUNT(CASE WHEN rating > 4 THEN 1 END) AS num_personas_calificaron
+                FROM ratings 
+                GROUP BY movieId
+                HAVING promedio_calificacion > 4.2 AND num_personas_calificaron >= 70
+                ORDER BY num_personas_calificaron ASC
                  """, conn)
 
 
@@ -79,3 +82,4 @@ pelicula_similar = pelicula_similar.sort_values(ascending = False)
 top_similar = pelicula_similar.to_frame(name = 'correlación').iloc[0:12,]
 top_similar['title'] = movies['title']
 top_similar
+
