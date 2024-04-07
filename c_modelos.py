@@ -51,7 +51,7 @@ m1 = pd.read_sql("""
                 ORDER BY num_personas_calificaron ASC""", conn)
 
 joined_df = pd.merge(m1, movies, how = 'inner', on = 'movieId')
-fig = px.pie(joined_df, values = 'num_personas_calificaron', names = 'titulo', 
+fig = px.bar(joined_df, x = 'num_personas_calificaron', y = 'titulo', 
              title = 'Top 10 películas mejor calificadas')
 fig.show()
 
@@ -81,7 +81,9 @@ movies_dum = pd.get_dummies(movies_1, dtype = int)
 # Convertimos a dummies
 movies_dum.shape # Dimensión de la tabla
 
-# Peliculas recomendadas para visualizacion de todas las pelicualas 
+# ------------------------------------------------------------------------------------------------------
+# -------------------------Sistema de recomendación basado en contenido (manual) -----
+# ------------------------------------------------------------------------------------------------------
 
 def recomendacion(peliculas = list(movies['titulo'])):
     ind_movies = movies[movies['titulo'] == peliculas].index.values.astype(int)[0]
