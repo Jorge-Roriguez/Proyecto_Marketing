@@ -31,8 +31,8 @@ cur.execute("Select name from sqlite_master where type='table'") ### consultar b
 cur.fetchall()
 
 # ------------------------- Leemos tablas como DataFrames -----------------------------------
-ratings = pd.read_sql("SELECT * FROM ratings", conn)
-movies = pd.read_sql("SELECT * FROM movies", conn)
+ratings = pd.read_sql("SELECT * FROM ratings_1", conn)
+movies = pd.read_sql("SELECT * FROM movies_1", conn)
 df_full = pd.read_sql("SELECT * FROM ratings_final", conn)
 
 # Preprocesamiento de la tabla movies - generación de dummies 

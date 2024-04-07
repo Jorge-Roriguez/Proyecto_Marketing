@@ -33,23 +33,14 @@ cur.execute("Select name from sqlite_master where type='table'")
 cur.fetchall()
 
 # ------------------------- Leemos tablas como DataFrames -----------------------------------
-ratings = pd.read_sql("SELECT * FROM ratings", conn)
-movies = pd.read_sql("SELECT * FROM movies", conn)
+ratings = pd.read_sql("SELECT * FROM ratings_1", conn)
+movies = pd.read_sql("SELECT * FROM movies_1", conn)
+df_full = pd.read_sql("SELECT * FROM ratings_final", conn)
 
 
-genres=movies['genres'].str.split('|')
-te = TransactionEncoder()
-genres = te.fit_transform(genres)
-genres = pd.DataFrame(genres, columns = te.columns_)
-genres  = genres.astype(int)
-movies_1 = movies.drop(['genres'], axis = 1, inplace = True) 
-movies_1 =pd.concat([movies, genres],axis=1)
-movies_1
-
-
-# -------------------------------------------------------------------------------------------
-# ------------------------- Sistemas de recomendación por valoración (popularidad) ------------------------ 
-# -------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------------------------
+# ------------------------- Sistemas de recomendación por valoración (popularidad) ------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------------------------
 
 # Películas que han calificado > 4 en promedio y el número de personas que las han calificado es mayor a 70
 m1 = pd.read_sql("""
@@ -60,7 +51,7 @@ m1 = pd.read_sql("""
                 ORDER BY num_personas_calificaron ASC""", conn)
 
 joined_df = pd.merge(m1, movies, how = 'inner', on = 'movieId')
-fig = px.pie(joined_df, values = 'num_personas_calificaron', names = 'title', 
+fig = px.pie(joined_df, values = 'num_personas_calificaron', names = 'titulo', 
              title = 'Top 10 películas mejor calificadas')
 fig.show()
 
@@ -70,61 +61,61 @@ fig.show()
 # ------------------------- Sistemas de recomendación por contenido ------------------------- 
 # -------------------------------------------------------------------------------------------
 
+# Tratamiento de datos para este sistema 
+genres = movies['genres'].str.split('|')
+te = TransactionEncoder()
+genres = te.fit_transform(genres)
+genres = pd.DataFrame(genres, columns = te.columns_)
+genres  = genres.astype(int)
+movies_1 = movies.drop(['genres'], axis = 1, inplace = True) 
+movies_1 =pd.concat([movies, genres], axis = 1)
+movies_1
+
 # Se trabajo con esta tabla dado que las comparaciónes ahora son por contenido no por rating 
-movies.info()
-movies_1 = movies_1.drop('movieId', axis = 1) # No se necesita el ID 
+movies_1.dtypes
+movies_1 = movies_1.drop('movieId', axis = 1) # No se necesita el ID
+sc = MinMaxScaler()
+movies_1[['estreno']] = sc.fit_transform(movies_1[['estreno']]) # Se escala el año
 movies_dum = pd.get_dummies(movies_1, dtype = int)
 
-
 # Convertimos a dummies
-movies.shape # Dimensión de la tabla
-
-# Peliculas recomendadas a partir de una película 
-pelicula = 'Toy Story (1995)'
-id_pelicula = movies[movies['title'] == pelicula].index.values.astype(int)[0]
-pelicula_similar = movies_dum.corrwith(movies_dum.iloc[id_pelicula,:], axis = 1)
-pelicula_similar = pelicula_similar.sort_values(ascending = False)
-top_similar = pelicula_similar.to_frame(name = 'correlación').iloc[0:12,]
-top_similar['title'] = movies['title']
-top_similar
+movies_dum.shape # Dimensión de la tabla
 
 # Peliculas recomendadas para visualizacion de todas las pelicualas 
 
-def recomendacion(peliculas = list(movies['title'])):
-    ind_movies = movies[movies['title']==peliculas].index.values.astype(int)[0]
-    similar_movies = movies_dum.corrwith(movies_dum.iloc[ind_movies,:],axis=1)
-    similar_movies = similar_movies.sort_values(ascending=False)
-    top_similar_movies = similar_movies.to_frame(name="correlación").iloc[0:11,]
-    top_similar_movies['title']=movies["title"]
+def recomendacion(peliculas = list(movies['titulo'])):
+    ind_movies = movies[movies['titulo'] == peliculas].index.values.astype(int)[0]
+    similar_movies = movies_dum.corrwith(movies_dum.iloc[ind_movies,:], axis = 1)
+    similar_movies = similar_movies.sort_values(ascending = False)
+    del similar_movies[0]
+    top_similar_movies = similar_movies.to_frame(name = "correlación").iloc[0:11,]
+    top_similar_movies['titulo'] = movies["titulo"]
 
     return top_similar_movies
 
 print(interact(recomendacion))
 
 
-
 # ------------------------------------------------------------------------------------------------------
 # -------------------------Sistema de recomendación basado en contenido KNN, un solo producto visto -----
 # ------------------------------------------------------------------------------------------------------
 
-#Entrenar modelo
-
-""" model = neighbors.NearestNeighbors(n_neighbors = 10, metric='cosine')
+# Entrenar modelo
+model = neighbors.NearestNeighbors(n_neighbors = 10, metric = 'cosine')
 model.fit(movies_dum)
-dist, idlist = model.kneighbors(movies_dum)
 
+# Distancias entre las películas
+dist, idlist = model.kneighbors(movies_dum)
 distancias = pd.DataFrame(dist)
 id_list = pd.DataFrame(idlist)
 
-
 # Sistema de recomendación
-
-def MovieRecommender(movie_name = list(movies['title'].value_counts().index)):
+def MovieRecommender(movie_name = list(movies['titulo'].value_counts().index)):
     movie_list_name = []
-    movie_id = movies[movies['title'] == movie_name].index
+    movie_id = movies[movies['titulo'] == movie_name].index
     movie_id = movie_id[0]
     for newid in idlist[movie_id]:
-        movie_list_name.append(movies.loc[newid].title)
+        movie_list_name.append(movies.loc[newid].titulo)
     return movie_list_name
 
-print(interact(MovieRecommender)) """
+print(interact(MovieRecommender))
