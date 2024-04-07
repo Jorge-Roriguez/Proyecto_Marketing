@@ -33,7 +33,7 @@ cur.fetchall()
 # ------------------------- Leemos tablas como DataFrames -----------------------------------
 ratings = pd.read_sql("SELECT * FROM ratings", conn)
 movies = pd.read_sql("SELECT * FROM movies", conn)
-movies
+df_full = pd.read_sql("SELECT * FROM ratings_final", conn)
 
 # Preprocesamiento de la tabla movies - generación de dummies 
 
