@@ -166,21 +166,19 @@ def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
     
     
     ### filtrar libros no leídos
-    movies_nr = movies_dum[~movies_dum['movieId'].isin(ratings_array)]
+    movies_ns = movies_dum[~movies_dum['movieId'].isin(ratings_array)]
     ## eliminbar nombre e isbn
-    movies_nr = movies_nr.drop(columns=['movieId','titulo'])
+    movies_ns = movies_ns.drop(columns=['movieId','titulo'])
     
     ### entrenar modelo 
     model=neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
-    model.fit(movies_nr)
+    model.fit(movies_ns)
     dist, idlist = model.kneighbors(centroide)
     
     ids=idlist[0] ### queda en un array anidado, para sacarlo
-    recomend_b=movies.loc[ids][['titulo','movieId']]
+    recomend_m = movies.loc[ids][['titulo','movieId']]
     leidos = movies[movies['movieId'].isin(ratings_array)][['titulo','movieId']]
     
-    return recomend_b
-
+    return recomend_m
 
 recomendar(609)
-
