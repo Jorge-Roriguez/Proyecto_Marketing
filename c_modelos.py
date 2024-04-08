@@ -83,7 +83,7 @@ plt.show()
 
 
 # -------------------------------------------------------------------------------------------
-# ------------------------- Sistemas de recomendación por contenido ------------------------- 
+# ---------- Sistemas de recomendación por contenido (un solo producto) --------------------- 
 # -------------------------------------------------------------------------------------------
 
 # Tratamiento de datos para este sistema 
@@ -124,3 +124,63 @@ def MovieRecommender(movie_name = list(movies['titulo'].value_counts().index)):
     return movie_list_name
 
 print(interact(MovieRecommender))
+
+
+# -------------------------------------------------------------------------------------------
+# ---------- Sistemas de recomendación por contenido (Todo lo visto) ------------------------ 
+# -------------------------------------------------------------------------------------------
+
+
+# Vamos a trabajar con el dataframe escalado y con dummies movies_dum 
+movies_dum
+
+# Se selecciona un usuario para realizar las recomendaciones 
+
+usuarios = pd.read_sql('SELECT distinct (userId) as user_id from ratings_final',conn)
+
+# Seleccionamos un usuarios para realizar el sistema de recomendación
+user_id= 607 
+movies
+prueba = pd.read_sql('SELECT * FROM ratings_final', conn)
+ratings
+
+def recomendar(user_id=list(usuarios['user_id'].value_counts().index)):
+    
+    # Se seleccionan los ratings del usuario establecido
+    ratings = pd.read_sql('SELECT * from ratings_final where userId=:user',conn, params={'user':user_id,})
+    
+    ###convertir ratings del usuario a array
+    ratings_array = ratings['movieId'].to_numpy()
+    
+    ###agregar la columna de isbn y titulo del libro a dummie para filtrar y mostrar nombre
+    movies_dum[['movieId','titulo']]= movies[['movieId','titulo']]
+    
+    ### filtrar libros calificados por el usuario
+    movies_r = movies_dum[movies_dum['movieId'].isin(ratings_array)]
+    
+    ## eliminar columna nombre e isbn
+    movies_r = movies_r.drop(columns=['movieId','titulo'])
+    movies_r["indice"] = 1 ### para usar group by y que quede en formato pandas tabla de centroide
+    ##centroide o perfil del usuario
+    centroide=movies_r.groupby("indice").mean()
+    
+    
+    ### filtrar libros no leídos
+    movies_nr = movies_dum[~movies_dum['movieId'].isin(ratings_array)]
+    ## eliminbar nombre e isbn
+    movies_nr = movies_nr.drop(columns=['movieId','titulo'])
+    
+    ### entrenar modelo 
+    model=neighbors.NearestNeighbors(n_neighbors=11, metric='cosine')
+    model.fit(movies_nr)
+    dist, idlist = model.kneighbors(centroide)
+    
+    ids=idlist[0] ### queda en un array anidado, para sacarlo
+    recomend_b=movies.loc[ids][['titulo','movieId']]
+    leidos = movies[movies['movieId'].isin(ratings_array)][['titulo','movieId']]
+    
+    return recomend_b
+
+
+recomendar(609)
+
