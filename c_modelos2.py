@@ -6,15 +6,12 @@ import sqlite3 as sql
 # Librerías para preprocesamiento 
 from sklearn.preprocessing import MinMaxScaler
 
-#Librerías para análisis interactivo 
+# Librerías para análisis interactivo 
 from ipywidgets import interact 
 from sklearn import neighbors 
 import joblib
 
-####Paquete para sistemas de recomendación surprise
-###Puede generar problemas en instalación local de pyhton. Genera error instalando con pip
-#### probar que les funcione para la próxima clase 
-
+# Paquete para sistemas de recomendación surprise 
 from surprise import Reader, Dataset
 from surprise.model_selection import cross_validate, GridSearchCV
 from surprise import KNNBasic, KNNWithMeans, KNNWithZScore, KNNBaseline
@@ -29,23 +26,19 @@ cur = conn.cursor()
 #######################################################################
 
 # Obtener datos; se filtran los mayores a 0
-
 rat = pd.read_sql('select * from ratings_final where rating>0', conn)
 
 # Definir escala
 Reader = Reader(rating_scale=(1,5))
 
 # Leer datos con suprise
-
 data = Dataset.load_from_df(rat[['userId','movieId','rating']], Reader)
 
 # Modelos 
-
 models  = [KNNBasic(),KNNWithMeans(),KNNWithZScore(),KNNBaseline()] 
 results = {}
 
 # Probar modelos
-
 model = models[1]
 for model in models:
  
@@ -60,8 +53,7 @@ performance_df.sort_values(by='RMSE')
 
 # Se selecciono el KNNBasic porque tiene mejores metricas en "MAE Y RMSE"
 
-# KNNBasic 
-
+# Definir la grilla de parámetros para la búsqueda de hiperparámetros
 param_grid = {
     'sim_options': {
         'name': ['msd', 'cosine'],
@@ -78,25 +70,21 @@ gridsearchKNNBasic.best_params["rmse"]
 gridsearchKNNBasic.best_score["rmse"]
 gs_model=gridsearchKNNBasic.best_estimator['rmse'] 
 
-# Entrenar con todos los datos y Realizar predicciones con el modelo afinado
-
+# Entrenar con todos los datos, y realizar predicciones con el modelo afinado
 trainset = data.build_full_trainset()
 model1 = gs_model.fit(trainset)
-
 predset = trainset.build_anti_testset()
-#len(predset)
-predictions = model1.test(predset)
+len(predset)
+predictions = gs_model.test(predset)
 
-# Crear base donde estara las predicciones 
-
+# Crear base; peliculas no vistas por usuario + calificacion predicha 
 predictions_df = pd.DataFrame(predictions) 
 predictions_df.shape
 predictions_df.head()
 predictions_df['r_ui'].unique()
 predictions_df.sort_values(by='est',ascending=False)
 
-# Funcion para recomendar 11 peliculas con mejores predicciones
-
+# Función para recomendar 11 películas a un usuario específico
 def recomendaciones(user_id,n_recomend=11):
     
     predictions_userID = predictions_df[predictions_df['uid'] == user_id].\
@@ -108,7 +96,7 @@ def recomendaciones(user_id,n_recomend=11):
     mov = pd.read_sql('''select a.*, b.titulo from reco a left join movies_1 b on a.iid=b.movieId''', conn)
     return mov
 
-
+# Obtener y mostrar las 11 peliculas recomendadas al usuario 50
 peliculas = recomendaciones(user_id=50, n_recomend=11)
 peliculas
 
